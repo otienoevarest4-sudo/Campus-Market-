@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Campus Market</title>
+<style>
+:root{--bg:#FFF6E9;--card:#fff;--ink:#2B1B12;--mut:#6B5646;--acc:#C2410C;--accink:#fff;--line:#A58A74;--red:#B3261E;--redink:#fff;--redbg:#FDECEA;--chip:#FBE4CC}
+@media (prefers-color-scheme:dark){:root{--bg:#1C130D;--card:#2A1D14;--ink:#FBEFE2;--mut:#CDB9A5;--acc:#FB923C;--accink:#2B1204;--line:#7A5F49;--red:#FF8A80;--redink:#3A1E1E;--redbg:#3A1E1E;--chip:#3D2A1D}}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+#app{max-width:640px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+h1{margin:0;font-size:28px;color:var(--acc)}h2{margin:8px 0 0;font-size:17px}
+.box,.card,.stat{background:var(--card);border-radius:14px}
+.box{padding:12px;display:flex;flex-direction:column;gap:8px}
+.ok{outline:1px solid var(--acc)}.lateb{background:var(--redbg);outline:1px solid var(--red)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{overflow:hidden;display:flex;flex-direction:column}
+.ph{height:84px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;background:var(--chip);color:#2B1B12}
+.b{padding:10px;display:flex;flex-direction:column;gap:4px}
+.n,.t,.h{font-weight:700}.n,.t{font-size:14px}.h{font-size:16px}.p{font-weight:700;margin-bottom:4px}
+.s{font-size:12px;color:var(--mut)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{min-height:44px;padding:0 16px;border-radius:22px;border:0;background:var(--card);color:var(--ink);font-size:14px;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 12px;border:0;border-radius:10px;background:var(--acc);color:var(--accink);font-size:13px;font-weight:700;text-align:center}
+.btn.no{background:var(--card);color:var(--red);border:1px solid var(--red)}
+.btn.alt,.btn.off{background:var(--chip);color:var(--ink)}
+.tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--chip);color:var(--ink);white-space:nowrap}
+.tag.late{background:var(--red);color:var(--redink)}
+.stat{flex:1;padding:10px;text-align:center}.num{font-size:24px;font-weight:800}
+label{font-size:12px;font-weight:600}
+input,select{min-height:44px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-size:14px;background:var(--card);color:var(--ink);width:100%}
+.chk{display:flex;align-items:center;gap:6px;white-space:nowrap}.chk input{width:22px;min-height:22px}
+.link{background:none;border:0;color:var(--mut);text-decoration:underline;min-height:44px}
+a{color:var(--acc);font-weight:700}.er{color:var(--red);font-size:13px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,writeBatch,onSnapshot,query,where} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyB6S7bCoAbVVgkFYW0gBahBmBynvoWpIrw",authDomain:"campus-market-290b9.firebaseapp.com",projectId:"campus-market-290b9",storageBucket:"campus-market-290b9.firebasestorage.app",messagingSenderId:"529660883069",appId:"1:529660883069:web:fd8e5c2a9f0e7c1e688114"});
+const auth=getAuth(app),db=getFirestore(app);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let U=null,P=null,D={sellers:[],products:[],orders:[],mine:[]},subs=[],pu=null,key='',view='browse',cat='All',ord=null,msg='',err='',mode='in',pend='';
+const fmt=t=>new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const late=o=>o.st=='Placed'&&Date.now()-o.at>864e5;
+const tag=o=>`<span class="tag${late(o)?' late':''}">${late(o)?'Late - ':''}${o.st}</span>`;
+const tint=n=>['#FBD9B5','#FDE9A8','#F8C9C0','#CDE8C9','#BFE0F0'][[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%5],byNew=(a,b)=>b.at-a.at,sn=id=>D.sellers.find(s=>s.id==id)?.name||'Unknown';
+const nice=e=>({'auth/invalid-credential':'Wrong email or password.','auth/email-already-in-use':'That email already has an account.','auth/weak-password':'Password needs 6 or more characters.','auth/invalid-email':'Please check the email address.','auth/missing-password':'Please type a password.'}[e.code]||(String(e.code).includes('permission')?'That is not allowed for your account.':'Something went wrong. Please try again.'));
+
+function soft(){const a=document.activeElement;if(!(a&&a.matches&&a.matches('#app input,#app select')))render()}
+function stop(){subs.forEach(f=>f());subs=[];pu&&pu();pu=null;key=''}
+function sub(){subs.forEach(f=>f());subs=[];
+const L=(q,k)=>subs.push(onSnapshot(q,s=>{D[k]=s.docs.map(d=>({id:d.id,...d.data()}));soft()},e=>console.error(e)));
+const o=collection(db,'orders');
+L(collection(db,'sellers'),'sellers');L(collection(db,'products'),'products');
+L(query(o,where('buyer','==',U.uid)),'mine');
+if(P.role=='admin')L(o,'orders');else if(P.role=='seller')L(query(o,where('sid','==',P.sid)),'orders')}
+onAuthStateChanged(auth,async u=>{stop();U=u;P=null;if(!u){render();return}
+const r=doc(db,'users',u.uid);
+try{const s=await getDoc(r);if(!s.exists())await setDoc(r,{name:pend||(u.email||'').split('@')[0],role:'buyer'})}catch(e){err=nice(e)}
+pu=onSnapshot(r,s=>{if(!s.exists())return;P=s.data();const k=P.role+'|'+(P.sid||'');if(k!=key){key=k;sub()}render()})});
+
+function authV(){return `<div class="box"><div class="chips"><button class="chip" aria-pressed="${mode=='in'}" data-a="mode" data-v="in">Sign in</button><button class="chip" aria-pressed="${mode=='up'}" data-a="mode" data-v="up">Create account</button></div>${mode=='up'?'<label for="an">First name</label><input id="an" autocomplete="given-name">':''}<label for="ae">Email</label><input id="ae" type="email" autocomplete="email"><label for="ap">Password (6 or more characters)</label><input id="ap" type="password" autocomplete="${mode=='in'?'current-password':'new-password'}"><button class="btn" data-a="auth">${mode=='in'?'Sign in':'Create account'}</button>${err?`<div class="er">${esc(err)}</div>`:''}</div>`}
+
+function browse(){
+const ok=new Set(D.sellers.filter(s=>s.ok).map(s=>s.id)),ps=D.products.filter(p=>ok.has(p.sid)),cats=['All',...new Set(ps.map(p=>p.cat))];
+let h=`<div class="chips">${cats.map(c=>`<button class="chip" aria-pressed="${c==cat}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
+if(ord){const p=D.products.find(x=>x.id==ord);h+=`<div class="box"><div class="h">${p.sold?'Pre-order':'Order'}: ${esc(p.name)}</div><label for="bn">Your first name</label><input id="bn" value="${esc(P.name)}"><label for="bs">Delivery spot</label><input id="bs" placeholder="e.g. Block C, near the canteen"><div class="row"><button class="btn" style="flex:1" data-a="go">Confirm</button><button class="btn alt" style="flex:1" data-a="no">Close</button></div></div>`}
+if(msg)h+=`<div class="box ok">${msg}</div>`;
+h+=`<div class="grid">${ps.filter(p=>cat=='All'||p.cat==cat).map(p=>{const b=p.sold&&!p.back?'<span class="btn off">Sold out</span>':`<button class="btn" data-a="ord" data-v="${p.id}">${p.sold?'Pre-order (back '+esc(p.back)+')':'Order'}</button>`;return `<div class="card"><div class="ph" style="background:${tint(p.name)}">${esc(p.name[0])}</div><div class="b"><div class="n">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))}</div><div class="p">${Number(p.price).toFixed(2)}</div>${b}</div></div>`}).join('')}</div>`;
+const my=[...D.mine].sort(byNew);
+if(my.length)h+='<h2>My orders</h2>'+my.map(o=>{const open=!['Completed','Cancelled','Declined'].includes(o.st);return `<div class="box"><div class="row"><div class="t">${esc(o.pname)}</div>${tag(o)}</div><div class="s">${fmt(o.at)} · ${esc(o.spot)}</div>${o.why?`<div class="s">Reason: ${esc(o.why)}</div>`:''}${open?`<div class="row"><select id="r${o.id}" aria-label="Cancel reason"><option>Changed my mind</option><option>Wrong item</option><option>Seller too slow</option></select><button class="btn no" data-a="cx" data-v="${o.id}">Cancel</button></div>`:''}</div>`}).join('');
+if(P.role=='buyer'){const m=D.sellers.find(s=>s.owner==U.uid);h+=m?`<div class="box"><div class="t">Your shop ${esc(m.name)} is waiting for approval.</div></div>`:`<div class="box"><div class="h">Want to sell?</div><label for="sb">Business name</label><input id="sb"><button class="btn" data-a="apply">Apply to sell</button></div>`}
+return h}
+
+function seller(){
+const ps=D.products.filter(p=>p.sid==P.sid),os=[...D.orders].sort(byNew);
+let h=`<div class="h">${esc(sn(P.sid))}</div><div class="box"><div class="row"><div class="h">New orders</div><div class="num">${os.filter(o=>o.st=='Placed').length}</div></div></div>`;
+h+=os.map(o=>{const a={Placed:[['acc','Accept',''],['dec','Decline','no']],Accepted:[['pen','Move to pending','']],Pending:[['com','Complete','']]}[o.st]||[];return `<div class="box${late(o)?' lateb':''}"><div class="row"><div class="t">${esc(o.name)} - ${esc(o.pname)}</div>${tag(o)}</div><div class="s">${esc(o.spot)} · ${fmt(o.at)}</div>${o.why?`<div class="s">Reason: ${esc(o.why)}</div>`:''}${o.st=='Scheduled'?'<div class="s">Becomes a real order when you mark the product back in stock.</div>':''}${a.length?`<div class="row">${a.map(x=>`<button class="btn ${x[2]}" style="flex:1" data-a="${x[0]}" data-v="${o.id}">${x[1]}</button>`).join('')}</div>`:''}</div>`}).join('')||'<div class="s">No orders yet.</div>';
+h+='<h2>Your products</h2>'+ps.map(p=>`<div class="box"><div class="row"><div class="t">${esc(p.name)} (${Number(p.price).toFixed(2)})</div><label class="chk"><input type="checkbox" data-a="sold" data-v="${p.id}"${p.sold?' checked':''}>Sold out</label></div>${p.sold?`<div class="row"><input type="date" aria-label="Restock date" value="${esc(p.back)}" data-a="back" data-v="${p.id}"><button class="btn" style="white-space:nowrap" data-a="stock" data-v="${p.id}">Back in stock</button></div>`:''}</div>`).join('');
+h+=`<div class="box"><div class="h">Add a product</div><label for="np">Name</label><input id="np"><label for="npr">Price</label><input id="npr" inputmode="decimal"><label for="nc">Category</label><select id="nc"><option>Food</option><option>Crafts</option><option>Clothing</option></select><button class="btn" data-a="add">Add product</button></div>`;
+return h}
+
+function admin(){
+const os=D.orders,r=os.filter(o=>Date.now()-o.at<864e5),L=os.filter(late).length,pend=D.sellers.filter(s=>!s.ok);
+let h=`<div class="row">${[['Orders',r.length],['Accepted',r.filter(o=>['Accepted','Pending','Completed'].includes(o.st)).length],['Declined',r.filter(o=>o.st=='Declined').length]].map(x=>`<div class="stat"><div class="num">${x[1]}</div><div class="s">${x[0]}</div></div>`).join('')}</div><div class="s">Last 24 hours, all businesses</div>`;
+h+=`<div class="box${L?' lateb':''}"><div class="row"><div class="h">Needs attention</div><div class="num">${L}</div></div><div class="s">Orders still at Placed after one day</div></div>`;
+if(pend.length)h+='<h2>Sellers waiting for approval</h2>'+pend.map(s=>`<div class="box"><div class="t">${esc(s.name)}</div><div class="row"><button class="btn" style="flex:1" data-a="appr" data-v="${s.id}">Approve</button><button class="btn no" style="flex:1" data-a="rej" data-v="${s.id}">Reject</button></div></div>`).join('');
+h+='<h2>Orders by business</h2>';
+D.sellers.filter(s=>s.ok).forEach(s=>{const l=os.filter(o=>o.sid==s.id).sort(byNew);h+=`<div class="t">${esc(s.name)}</div>`+(l.map(o=>`<div class="box${late(o)?' lateb':''}"><div class="row"><div class="t">${esc(o.name)} - ${esc(o.pname)}</div>${tag(o)}</div><div class="s">${fmt(o.at)}${o.why?' · '+esc(o.why):''}</div></div>`).join('')||'<div class="s">No orders</div>')});
+h+='<h2>All products</h2>'+D.products.map(p=>`<div class="box"><div class="row"><div><div class="t">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))}</div></div><button class="btn no" data-a="del" data-v="${p.id}">Remove</button></div></div>`).join('');
+return h}
+
+function render(){let h;
+if(!U||!P)h='<h1>Campus Market</h1>'+(U?'<div class="s">Loading...</div>':authV());
+else{const tabs=[['browse','Browse'],...(P.role=='seller'?[['seller','My shop']]:[]),...(P.role=='admin'?[['admin','Admin']]:[])];
+if(!tabs.some(t=>t[0]==view))view='browse';
+h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="out">Sign out</button></div><div class="s">Hi ${esc(P.name)} (${P.role})</div>`+(tabs.length>1?`<div class="chips">${tabs.map(t=>`<button class="chip" aria-pressed="${t[0]==view}" data-a="view" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`:'')+({browse,seller,admin}[view])()+(err?`<div class="er">${esc(err)}</div>`:'')}
+$('#app').innerHTML=h}
+
+async function act(a,v,el){err='';const D_=(k,i)=>D[k].find(x=>x.id==i);
+try{
+if(a=='mode'){mode=v;err=''}
+else if(a=='auth'){const e=$('#ae').value.trim(),p=$('#ap').value;if(mode=='up'){pend=($('#an').value||'').trim();await createUserWithEmailAndPassword(auth,e,p)}else await signInWithEmailAndPassword(auth,e,p)}
+else if(a=='out')await signOut(auth);
+else if(a=='view'){view=v;msg=''}
+else if(a=='cat')cat=v;
+else if(a=='ord'){ord=v;msg=''}
+else if(a=='no')ord=null;
+else if(a=='go'){const n=$('#bn').value.trim(),sp=$('#bs').value.trim(),p=D_('products',ord);
+if(!n||!sp)msg='Please type your first name and delivery spot.';
+else{await addDoc(collection(db,'orders'),{pid:p.id,sid:p.sid,pname:p.name,buyer:U.uid,name:n,spot:sp,at:Date.now(),st:p.sold?'Scheduled':'Placed',why:''});
+msg=`Order sent, thank you ${esc(n)}. <a href="https://wa.me/?text=${encodeURIComponent('Hi, I just ordered '+p.name+' on Campus Market. - '+n)}" target="_blank" rel="noopener">Open WhatsApp to message the seller</a>`;ord=null}}
+else if(a=='cx')await updateDoc(doc(db,'orders',v),{st:'Cancelled',why:$('#r'+v).value});
+else if(a=='apply'){const n=$('#sb').value.trim();if(n)await addDoc(collection(db,'sellers'),{name:n,owner:U.uid,ok:false})}
+else if(['acc','dec','pen','com'].includes(a))await updateDoc(doc(db,'orders',v),{st:{acc:'Accepted',dec:'Declined',pen:'Pending',com:'Completed'}[a]});
+else if(a=='sold'){const p=D_('products',v);if(el.checked)await updateDoc(doc(db,'products',v),{sold:true});else await restock(p)}
+else if(a=='back')await updateDoc(doc(db,'products',v),{back:el.value});
+else if(a=='stock')await restock(D_('products',v));
+else if(a=='add'){const n=$('#np').value.trim(),pr=parseFloat($('#npr').value);if(n&&pr>=0)await addDoc(collection(db,'products'),{sid:P.sid,name:n,cat:$('#nc').value,price:pr,sold:false,back:''})}
+else if(a=='appr'){const s=D_('sellers',v),b=writeBatch(db);b.update(doc(db,'sellers',v),{ok:true});b.update(doc(db,'users',s.owner),{role:'seller',sid:v});await b.commit()}
+else if(a=='rej')await deleteDoc(doc(db,'sellers',v));
+else if(a=='del')await deleteDoc(doc(db,'products',v));
+}catch(e){err=nice(e);console.error(e)}
+render()}
+async function restock(p){const b=writeBatch(db);b.update(doc(db,'products',p.id),{sold:false,back:''});
+D.orders.filter(o=>o.pid==p.id&&o.st=='Scheduled').forEach(o=>b.update(doc(db,'orders',o.id),{st:'Placed',at:Date.now()}));await b.commit()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.matches('input,select'))act(b.dataset.a,b.dataset.v)});
+document.addEventListener('change',e=>{const b=e.target;if(b.dataset.a&&b.matches('input,select')){b.blur();act(b.dataset.a,b.dataset.v,b)}});
+render();
+</script>
+</body>
+</html>
