@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Campus Market</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#C2410C">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Campus Market">
 <style>
 :root{--bg:#FFF6E9;--card:#fff;--ink:#2B1B12;--mut:#6B5646;--acc:#C2410C;--accink:#fff;--line:#A58A74;--red:#B3261E;--redink:#fff;--redbg:#FDECEA;--chip:#FBE4CC;--input:#fff;--bd:#F0DFC8;--on:#2B1B12;--onink:#FFF6E9;--sbg:#FFE9D2}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#120C08;--card:#2A1C13;--ink:#FBEFE2;--mut:#CDB9A5;--acc:#FB923C;--accink:#2B1204;--line:#8C6F57;--red:#FF8A80;--redink:#3A1E1E;--redbg:#3A1E1E;--chip:#3D2A1D;--input:#1A110B;--bd:#4A3426;--on:#6B4A32;--onink:#FBEFE2;--sbg:#2E1D11}}
@@ -262,6 +269,7 @@ D.orders.filter(o=>o.pid==p.id&&o.st=='Scheduled').forEach(o=>b.update(doc(db,'o
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.matches('input,select'))act(b.dataset.a,b.dataset.v)});
 document.addEventListener('change',e=>{const b=e.target;if(b.dataset.a&&b.matches('input,select')){b.blur();act(b.dataset.a,b.dataset.v,b)}});
 render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
