@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Campus Market</title>
 <style>
-:root{--bg:#FFF6E9;--card:#fff;--ink:#2B1B12;--mut:#6B5646;--acc:#C2410C;--accink:#fff;--line:#A58A74;--red:#B3261E;--redink:#fff;--redbg:#FDECEA;--chip:#FBE4CC}
-@media (prefers-color-scheme:dark){:root{--bg:#1C130D;--card:#2A1D14;--ink:#FBEFE2;--mut:#CDB9A5;--acc:#FB923C;--accink:#2B1204;--line:#7A5F49;--red:#FF8A80;--redink:#3A1E1E;--redbg:#3A1E1E;--chip:#3D2A1D}}
+:root{--bg:#FFF6E9;--card:#fff;--ink:#2B1B12;--mut:#6B5646;--acc:#C2410C;--accink:#fff;--line:#A58A74;--red:#B3261E;--redink:#fff;--redbg:#FDECEA;--chip:#FBE4CC;--input:#fff;--bd:#F0DFC8;--on:#2B1B12;--onink:#FFF6E9;--sbg:#FFE9D2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#120C08;--card:#2A1C13;--ink:#FBEFE2;--mut:#CDB9A5;--acc:#FB923C;--accink:#2B1204;--line:#8C6F57;--red:#FF8A80;--redink:#3A1E1E;--redbg:#3A1E1E;--chip:#3D2A1D;--input:#1A110B;--bd:#4A3426;--on:#6B4A32;--onink:#FBEFE2;--sbg:#2E1D11}}
+:root[data-theme="dark"]{--bg:#120C08;--card:#2A1C13;--ink:#FBEFE2;--mut:#CDB9A5;--acc:#FB923C;--accink:#2B1204;--line:#8C6F57;--red:#FF8A80;--redink:#3A1E1E;--redbg:#3A1E1E;--chip:#3D2A1D;--input:#1A110B;--bd:#4A3426;--on:#6B4A32;--onink:#FBEFE2;--sbg:#2E1D11}
 html{background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 #app{max-width:640px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px}
 h1{margin:0;font-size:28px;color:var(--acc)}h2{margin:8px 0 0;font-size:17px}
-.box,.card,.stat{background:var(--card);border-radius:14px}
+.box,.card,.stat{background:var(--card);border-radius:14px;border:1px solid var(--bd)}
 .box{padding:12px;display:flex;flex-direction:column;gap:8px}
 .ok{outline:1px solid var(--acc)}.lateb{background:var(--redbg);outline:1px solid var(--red)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -23,7 +24,7 @@ h1{margin:0;font-size:28px;color:var(--acc)}h2{margin:8px 0 0;font-size:17px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{min-height:44px;padding:0 16px;border-radius:22px;border:0;background:var(--card);color:var(--ink);font-size:14px;font-weight:600}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chip[aria-pressed="true"]{background:var(--on);color:var(--onink)}
 .btn{display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 12px;border:0;border-radius:10px;background:var(--acc);color:var(--accink);font-size:13px;font-weight:700;text-align:center}
 .btn.no{background:var(--card);color:var(--red);border:1px solid var(--red)}
 .btn.alt,.btn.off{background:var(--chip);color:var(--ink)}
@@ -31,10 +32,23 @@ h1{margin:0;font-size:28px;color:var(--acc)}h2{margin:8px 0 0;font-size:17px}
 .tag.late{background:var(--red);color:var(--redink)}
 .stat{flex:1;padding:10px;text-align:center}.num{font-size:24px;font-weight:800}
 label{font-size:12px;font-weight:600}
-input,select{min-height:44px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-size:14px;background:var(--card);color:var(--ink);width:100%}
+input,select{min-height:44px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-size:14px;background:var(--input);color:var(--ink);width:100%}
 .chk{display:flex;align-items:center;gap:6px;white-space:nowrap}.chk input{width:22px;min-height:22px}
 .link{background:none;border:0;color:var(--mut);text-decoration:underline;min-height:44px}
-a{color:var(--acc);font-weight:700}.er{color:var(--red);font-size:13px}
+a{color:var(--acc);font-weight:700}
+.stu{background:var(--sbg);border:1px solid var(--bd);border-radius:18px;padding:14px 0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.stu .row{padding-right:14px}.stu h2{margin:0;font-size:19px}
+.sm{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;touch-action:pan-x pan-y;overscroll-behavior-x:contain;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.sm::-webkit-scrollbar{display:none}
+.trk{display:flex;gap:12px;width:max-content;padding:2px 0}
+.scard{display:flex;flex-direction:column;gap:2px;flex:0 0 150px;width:150px;padding:0 0 10px;background:var(--card);border:1px solid var(--bd);border-radius:14px;color:var(--ink);font:inherit;text-align:left;overflow:hidden;cursor:pointer;transition:transform .2s}
+.scard:hover{transform:translateY(-2px)}
+.simg{display:flex;align-items:center;justify-content:center;height:130px;font-size:32px;font-weight:800;color:#2B1B12}
+.simg img{width:100%;height:100%;object-fit:cover}
+.sn,.ss{padding:0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn{padding-top:8px;font-weight:700;font-size:14px}.sp{padding:0 10px;font-weight:700}
+.ss{font-size:12px;color:var(--mut)}
+@media (prefers-reduced-motion:reduce){.scard{transition:none}.scard:hover{transform:none}}.er{color:var(--red);font-size:13px}
 </style>
 </head>
 <body>
@@ -47,13 +61,17 @@ const app=initializeApp({apiKey:"AIzaSyB6S7bCoAbVVgkFYW0gBahBmBynvoWpIrw",authDo
 const auth=getAuth(app),db=getFirestore(app);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let U=null,P=null,D={sellers:[],products:[],orders:[],mine:[]},subs=[],pu=null,key='',view='browse',cat='All',ord=null,msg='',err='',mode='in',pend='';
+let th='auto';try{th=localStorage.getItem('cmTheme')||'auto'}catch(e){}
+const dark=()=>th=='dark'||(th=='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);
+const applyTh=()=>document.documentElement.setAttribute('data-theme',dark()?'dark':'light');applyTh();
+let U=null,P=null,D={sellers:[],products:[],orders:[],mine:[]},subs=[],pu=null,key='',view='browse',cat='All',ty='All',ord=null,msg='',err='',mode='in',pend='';
 const fmt=t=>new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 const late=o=>o.st=='Placed'&&Date.now()-o.at>864e5;
 const tag=o=>`<span class="tag${late(o)?' late':''}">${late(o)?'Late - ':''}${o.st}</span>`;
 const tint=n=>['#FBD9B5','#FDE9A8','#F8C9C0','#CDE8C9','#BFE0F0'][[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%5],byNew=(a,b)=>b.at-a.at,sn=id=>D.sellers.find(s=>s.id==id)?.name||'Unknown';
 const nice=e=>({'auth/invalid-credential':'Wrong email or password.','auth/email-already-in-use':'That email already has an account.','auth/weak-password':'Password needs 6 or more characters.','auth/invalid-email':'Please check the email address.','auth/missing-password':'Please type a password.'}[e.code]||(String(e.code).includes('permission')?'That is not allowed for your account.':'Something went wrong. Please try again.'));
 
+const kd=id=>D.sellers.find(s=>s.id==id)?.kind=='student'?'student':'business';
 function soft(){const a=document.activeElement;if(!(a&&a.matches&&a.matches('#app input,#app select')))render()}
 function stop(){subs.forEach(f=>f());subs=[];pu&&pu();pu=null;key=''}
 function sub(){subs.forEach(f=>f());subs=[];
@@ -69,15 +87,44 @@ pu=onSnapshot(r,s=>{if(!s.exists())return;P=s.data();const k=P.role+'|'+(P.sid||
 
 function authV(){return `<div class="box"><div class="chips"><button class="chip" aria-pressed="${mode=='in'}" data-a="mode" data-v="in">Sign in</button><button class="chip" aria-pressed="${mode=='up'}" data-a="mode" data-v="up">Create account</button></div>${mode=='up'?'<label for="an">First name</label><input id="an" autocomplete="given-name">':''}<label for="ae">Email</label><input id="ae" type="email" autocomplete="email"><label for="ap">Password (6 or more characters)</label><input id="ap" type="password" autocomplete="${mode=='in'?'current-password':'new-password'}"><button class="btn" data-a="auth">${mode=='in'?'Sign in':'Create account'}</button>${err?`<div class="er">${esc(err)}</div>`:''}</div>`}
 
+function carCard(p,clone){const im=String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}">`:esc(p.name[0]);return `<button class="scard" data-a="ord" data-v="${p.id}"${clone?' tabindex="-1" aria-hidden="true"':''}><span class="simg" style="background:${tint(p.name)}">${im}</span><span class="sn">${esc(p.name)}</span><span class="sp">${Number(p.price).toFixed(2)}${p.sold?' · back '+esc(p.back):''}</span><span class="ss">by ${esc(sn(p.sid))}</span></button>`}
+function stu(){
+const ok=new Set(D.sellers.filter(s=>s.ok).map(s=>s.id));
+const ps=D.products.filter(p=>ok.has(p.sid)&&kd(p.sid)=='student'&&!(p.sold&&!p.back));
+if(!ps.length)return '';
+const loop=ps.length>=3&&!matchMedia('(prefers-reduced-motion: reduce)').matches,k=loop?Math.ceil(1400/(ps.length*162))+3:1;
+let c='';for(let i=0;i<k;i++)c+=ps.map(p=>carCard(p,i>0)).join('');
+return `<section class="stu" aria-labelledby="stt"><div class="row"><div><h2 id="stt">Student Marketplace</h2><div class="s">Discover what students are selling.</div></div><span class="tag">Student</span></div><div id="sm" class="sm" tabindex="0" role="region" aria-label="Student products, swipe sideways" data-loop="${loop?1:0}" data-n="${ps.length}"><div class="trk">${c}</div></div></section>`}
+let pos=0,hold=false,resumeAt=0,lastUser=-1e9,lastSet=0,lastT=0,sync=0;
+function initCar(){const el=$('#sm');if(!el)return;
+if(el.dataset.loop=='1'){const t=el.firstElementChild,h=t.children[+el.dataset.n].offsetLeft-t.children[0].offsetLeft;el.dataset.half=h;
+while(pos<h)pos+=h;while(pos>=2*h)pos-=h;el.scrollLeft=pos;lastSet=el.scrollLeft;sync=1}else el.scrollLeft=pos;
+hold=el.matches(':hover')}
+function tick(t){requestAnimationFrame(tick);const dt=Math.min(100,t-lastT);lastT=t;const el=$('#sm');
+if(!el||el.dataset.loop!='1'||hold||t<resumeAt||t-lastUser<2500||document.hidden){sync=1;return}
+if(sync){pos=el.scrollLeft;sync=0}
+const h=+el.dataset.half;pos+=0.028*dt;if(pos>=2*h)pos-=h;el.scrollLeft=pos;lastSet=el.scrollLeft}
+requestAnimationFrame(tick);
+const inSm=e=>e.target.closest&&e.target.closest('#sm'),hd=()=>{hold=true},rl=()=>{hold=false;resumeAt=performance.now()+2500};
+document.addEventListener('pointerover',e=>{if(inSm(e)&&e.pointerType=='mouse')hd()});
+document.addEventListener('pointerout',e=>{if(inSm(e)&&!(e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest('#sm')))rl()});
+document.addEventListener('pointerdown',e=>{if(inSm(e))hd()});
+['pointerup','pointercancel'].forEach(n=>document.addEventListener(n,()=>{if(hold)rl()}));
+document.addEventListener('wheel',e=>{if(inSm(e))lastUser=performance.now()},{passive:true});
+document.addEventListener('focusin',e=>{if(inSm(e))hd()});
+document.addEventListener('focusout',e=>{if(inSm(e))rl()});
+document.addEventListener('scroll',e=>{const el=e.target;if(!el||el.id!='sm')return;const h=+el.dataset.half;
+if(Math.abs(el.scrollLeft-lastSet)>1.5)lastUser=performance.now();
+if(h){let x=el.scrollLeft;if(x<h)x+=h;else if(x>=2*h)x-=h;if(x!=el.scrollLeft){el.scrollLeft=x;lastSet=x}}},true);
 function browse(){
 const ok=new Set(D.sellers.filter(s=>s.ok).map(s=>s.id)),ps=D.products.filter(p=>ok.has(p.sid)),cats=['All',...new Set(ps.map(p=>p.cat))];
-let h=`<div class="chips">${cats.map(c=>`<button class="chip" aria-pressed="${c==cat}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
-if(ord){const p=D.products.find(x=>x.id==ord);h+=`<div class="box"><div class="h">${p.sold?'Pre-order':'Order'}: ${esc(p.name)}</div><label for="bn">Your first name</label><input id="bn" value="${esc(P.name)}"><label for="bs">Delivery spot</label><input id="bs" placeholder="e.g. Block C, near the canteen"><div class="row"><button class="btn" style="flex:1" data-a="go">Confirm</button><button class="btn alt" style="flex:1" data-a="no">Close</button></div></div>`}
+let h=stu()+`<div class="chips">${cats.map(c=>`<button class="chip" aria-pressed="${c==cat}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="chips">${[['All','All sellers'],['business','Businesses'],['student','Student items']].map(t=>`<button class="chip" aria-pressed="${t[0]==ty}" data-a="ty" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`;
+if(ord){const p=D.products.find(x=>x.id==ord);h+=`<div class="box" id="ordp"><div class="h">${p.sold?'Pre-order':'Order'}: ${esc(p.name)}</div><label for="bn">Your first name</label><input id="bn" value="${esc(P.name)}"><label for="bs">Delivery spot</label><input id="bs" placeholder="e.g. Block C, near the canteen"><div class="row"><button class="btn" style="flex:1" data-a="go">Confirm</button><button class="btn alt" style="flex:1" data-a="no">Close</button></div></div>`}
 if(msg)h+=`<div class="box ok">${msg}</div>`;
-h+=`<div class="grid">${ps.filter(p=>cat=='All'||p.cat==cat).map(p=>{const b=p.sold&&!p.back?'<span class="btn off">Sold out</span>':`<button class="btn" data-a="ord" data-v="${p.id}">${p.sold?'Pre-order (back '+esc(p.back)+')':'Order'}</button>`;return `<div class="card"><div class="ph" style="background:${tint(p.name)}">${String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover">`:esc(p.name[0])}</div><div class="b"><div class="n">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))}</div><div class="p">${Number(p.price).toFixed(2)}</div>${b}</div></div>`}).join('')}</div>`;
+h+=`<div class="grid">${ps.filter(p=>(cat=='All'||p.cat==cat)&&(ty=='All'||kd(p.sid)==ty)).map(p=>{const b=p.sold&&!p.back?'<span class="btn off">Sold out</span>':`<button class="btn" data-a="ord" data-v="${p.id}">${p.sold?'Pre-order (back '+esc(p.back)+')':'Order'}</button>`;return `<div class="card"><div class="ph" style="background:${tint(p.name)}">${String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover">`:esc(p.name[0])}</div><div class="b"><div class="n">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))} · ${kd(p.sid)=='student'?'Student':'Business'}</div><div class="p">${Number(p.price).toFixed(2)}</div>${b}</div></div>`}).join('')}</div>`;
 const my=[...D.mine].sort(byNew);
 if(my.length)h+='<h2>My orders</h2>'+my.map(o=>{const open=!['Completed','Cancelled','Declined'].includes(o.st);return `<div class="box"><div class="row"><div class="t">${esc(o.pname)}</div>${tag(o)}</div><div class="s">${fmt(o.at)} · ${esc(o.spot)}</div>${o.why?`<div class="s">Reason: ${esc(o.why)}</div>`:''}${open?`<div class="row"><select id="r${o.id}" aria-label="Cancel reason"><option>Changed my mind</option><option>Wrong item</option><option>Seller too slow</option></select><button class="btn no" data-a="cx" data-v="${o.id}">Cancel</button></div>`:''}</div>`}).join('');
-if(P.role=='buyer'){const m=D.sellers.find(s=>s.owner==U.uid);h+=m?`<div class="box"><div class="t">Your shop ${esc(m.name)} is waiting for approval.</div></div>`:`<div class="box"><div class="h">Want to sell?</div><label for="sb">Business name</label><input id="sb"><button class="btn" data-a="apply">Apply to sell</button></div>`}
+if(P.role=='buyer'){const m=D.sellers.find(s=>s.owner==U.uid);h+=m?`<div class="box"><div class="t">Your shop ${esc(m.name)} is waiting for approval.</div></div>`:`<div class="box"><div class="h">Want to sell?</div><div class="s">Run a business or just have items to sell? Both are welcome.</div><label for="sb">Shop name (or just your own name)</label><input id="sb"><label for="sk">I am a</label><select id="sk"><option value="business">Business</option><option value="student">Student selling my own items</option></select><button class="btn" data-a="apply">Apply to sell</button></div>`}
 return h}
 
 function seller(){
@@ -85,25 +132,25 @@ const ps=D.products.filter(p=>p.sid==P.sid),os=[...D.orders].sort(byNew);
 let h=`<div class="h">${esc(sn(P.sid))}</div><div class="box"><div class="row"><div class="h">New orders</div><div class="num">${os.filter(o=>o.st=='Placed').length}</div></div></div>`;
 h+=os.map(o=>{const a={Placed:[['acc','Accept',''],['dec','Decline','no']],Accepted:[['pen','Move to pending','']],Pending:[['com','Complete','']]}[o.st]||[];return `<div class="box${late(o)?' lateb':''}"><div class="row"><div class="t">${esc(o.name)} - ${esc(o.pname)}</div>${tag(o)}</div><div class="s">${esc(o.spot)} · ${fmt(o.at)}</div>${o.why?`<div class="s">Reason: ${esc(o.why)}</div>`:''}${o.st=='Scheduled'?'<div class="s">Becomes a real order when you mark the product back in stock.</div>':''}${a.length?`<div class="row">${a.map(x=>`<button class="btn ${x[2]}" style="flex:1" data-a="${x[0]}" data-v="${o.id}">${x[1]}</button>`).join('')}</div>`:''}</div>`}).join('')||'<div class="s">No orders yet.</div>';
 h+='<h2>Your products</h2>'+ps.map(p=>`<div class="box"><div class="row"><div class="t">${esc(p.name)} (${Number(p.price).toFixed(2)})</div><label class="chk"><input type="checkbox" data-a="sold" data-v="${p.id}"${p.sold?' checked':''}>Sold out</label></div><label class="s">Change photo<input type="file" accept="image/*" data-a="pic" data-v="${p.id}"></label>${p.sold?`<div class="row"><input type="date" aria-label="Restock date" value="${esc(p.back)}" data-a="back" data-v="${p.id}"><button class="btn" style="white-space:nowrap" data-a="stock" data-v="${p.id}">Back in stock</button></div>`:''}</div>`).join('');
-h+=`<div class="box"><div class="h">Add a product</div><label for="np">Name</label><input id="np"><label for="npr">Price</label><input id="npr" inputmode="decimal"><label for="nc">Category</label><select id="nc"><option>Food</option><option>Crafts</option><option>Clothing</option></select><label for="npi">Photo (optional)</label><input id="npi" type="file" accept="image/*"><button class="btn" data-a="add">Add product</button></div>`;
+h+=`<div class="box"><div class="h">Add a product</div><label for="np">Name</label><input id="np"><label for="npr">Price</label><input id="npr" inputmode="decimal"><label for="nc">Category</label><select id="nc"><option>Food</option><option>Crafts</option><option>Clothing</option><option>Books</option><option>Used items</option><option>Other</option></select><label for="npi">Photo (optional)</label><input id="npi" type="file" accept="image/*"><button class="btn" data-a="add">Add product</button></div>`;
 return h}
 
 function admin(){
 const os=D.orders,r=os.filter(o=>Date.now()-o.at<864e5),L=os.filter(late).length,pend=D.sellers.filter(s=>!s.ok);
 let h=`<div class="row">${[['Orders',r.length],['Accepted',r.filter(o=>['Accepted','Pending','Completed'].includes(o.st)).length],['Declined',r.filter(o=>o.st=='Declined').length]].map(x=>`<div class="stat"><div class="num">${x[1]}</div><div class="s">${x[0]}</div></div>`).join('')}</div><div class="s">Last 24 hours, all businesses</div>`;
 h+=`<div class="box${L?' lateb':''}"><div class="row"><div class="h">Needs attention</div><div class="num">${L}</div></div><div class="s">Orders still at Placed after one day</div></div>`;
-if(pend.length)h+='<h2>Sellers waiting for approval</h2>'+pend.map(s=>`<div class="box"><div class="t">${esc(s.name)}</div><div class="row"><button class="btn" style="flex:1" data-a="appr" data-v="${s.id}">Approve</button><button class="btn no" style="flex:1" data-a="rej" data-v="${s.id}">Reject</button></div></div>`).join('');
+if(pend.length)h+='<h2>Sellers waiting for approval</h2>'+pend.map(s=>`<div class="box"><div class="t">${esc(s.name)}</div><div class="s">${s.kind=='student'?'Student selling own items':'Business'}</div><div class="row"><button class="btn" style="flex:1" data-a="appr" data-v="${s.id}">Approve</button><button class="btn no" style="flex:1" data-a="rej" data-v="${s.id}">Reject</button></div></div>`).join('');
 h+='<h2>Orders by business</h2>';
 D.sellers.filter(s=>s.ok).forEach(s=>{const l=os.filter(o=>o.sid==s.id).sort(byNew);h+=`<div class="t">${esc(s.name)}</div>`+(l.map(o=>`<div class="box${late(o)?' lateb':''}"><div class="row"><div class="t">${esc(o.name)} - ${esc(o.pname)}</div>${tag(o)}</div><div class="s">${fmt(o.at)}${o.why?' · '+esc(o.why):''}</div></div>`).join('')||'<div class="s">No orders</div>')});
 h+='<h2>All products</h2>'+D.products.map(p=>`<div class="box"><div class="row"><div><div class="t">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))}</div></div><button class="btn no" data-a="del" data-v="${p.id}">Remove</button></div></div>`).join('');
 return h}
 
 function render(){let h;
-if(!U||!P)h='<h1>Campus Market</h1>'+(U?'<div class="s">Loading...</div>':authV());
+if(!U||!P)h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="theme">${dark()?'Light mode':'Dark mode'}</button></div>`+(U?'<div class="s">Loading...</div>':authV());
 else{const tabs=[['browse','Browse'],...(P.role=='seller'?[['seller','My shop']]:[]),...(P.role=='admin'?[['admin','Admin']]:[])];
 if(!tabs.some(t=>t[0]==view))view='browse';
-h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="out">Sign out</button></div><div class="s">Hi ${esc(P.name)} (${P.role})</div>`+(tabs.length>1?`<div class="chips">${tabs.map(t=>`<button class="chip" aria-pressed="${t[0]==view}" data-a="view" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`:'')+({browse,seller,admin}[view])()+(err?`<div class="er">${esc(err)}</div>`:'')}
-$('#app').innerHTML=h}
+h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="out">Sign out</button></div><div class="row"><div class="s">Hi ${esc(P.name)} (${P.role})</div><button class="link" data-a="theme">${dark()?'Light mode':'Dark mode'}</button></div>`+(tabs.length>1?`<div class="chips">${tabs.map(t=>`<button class="chip" aria-pressed="${t[0]==view}" data-a="view" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`:'')+({browse,seller,admin}[view])()+(err?`<div class="er">${esc(err)}</div>`:'')}
+const old=$('#sm');pos=old?old.scrollLeft:0;$('#app').innerHTML=h;initCar()}
 
 function shrink(f){return new Promise((ok,no)=>{const i=new Image(),u=URL.createObjectURL(f);i.onload=()=>{const r=Math.min(1,480/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*r);c.height=Math.round(i.height*r);c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',0.7))};i.onerror=()=>no(new Error('image'));i.src=u})}
 async function act(a,v,el){err='';const D_=(k,i)=>D[k].find(x=>x.id==i);
@@ -112,15 +159,17 @@ if(a=='mode'){mode=v;err=''}
 else if(a=='auth'){const e=$('#ae').value.trim(),p=$('#ap').value;if(mode=='up'){pend=($('#an').value||'').trim();await createUserWithEmailAndPassword(auth,e,p)}else await signInWithEmailAndPassword(auth,e,p)}
 else if(a=='out')await signOut(auth);
 else if(a=='view'){view=v;msg=''}
+else if(a=='theme'){th=dark()?'light':'dark';try{localStorage.setItem('cmTheme',th)}catch(e){}applyTh()}
 else if(a=='cat')cat=v;
-else if(a=='ord'){ord=v;msg=''}
+else if(a=='ty')ty=v;
+else if(a=='ord'){ord=v;msg='';setTimeout(()=>$('#ordp')?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}),50)}
 else if(a=='no')ord=null;
 else if(a=='go'){const n=$('#bn').value.trim(),sp=$('#bs').value.trim(),p=D_('products',ord);
 if(!n||!sp)msg='Please type your first name and delivery spot.';
 else{await addDoc(collection(db,'orders'),{pid:p.id,sid:p.sid,pname:p.name,buyer:U.uid,name:n,spot:sp,at:Date.now(),st:p.sold?'Scheduled':'Placed',why:''});
 msg=`Order sent, thank you ${esc(n)}. <a href="https://wa.me/?text=${encodeURIComponent('Hi, I just ordered '+p.name+' on Campus Market. - '+n)}" target="_blank" rel="noopener">Open WhatsApp to message the seller</a>`;ord=null}}
 else if(a=='cx')await updateDoc(doc(db,'orders',v),{st:'Cancelled',why:$('#r'+v).value});
-else if(a=='apply'){const n=$('#sb').value.trim();if(n)await addDoc(collection(db,'sellers'),{name:n,owner:U.uid,ok:false})}
+else if(a=='apply'){const n=$('#sb').value.trim();if(n)await addDoc(collection(db,'sellers'),{name:n,owner:U.uid,ok:false,kind:$('#sk').value})}
 else if(['acc','dec','pen','com'].includes(a))await updateDoc(doc(db,'orders',v),{st:{acc:'Accepted',dec:'Declined',pen:'Pending',com:'Completed'}[a]});
 else if(a=='sold'){const p=D_('products',v);if(el.checked)await updateDoc(doc(db,'products',v),{sold:true});else await restock(p)}
 else if(a=='back')await updateDoc(doc(db,'products',v),{back:el.value});
