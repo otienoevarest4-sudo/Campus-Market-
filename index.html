@@ -36,6 +36,14 @@ input,select{min-height:44px;box-sizing:border-box;border:1px solid var(--line);
 .chk{display:flex;align-items:center;gap:6px;white-space:nowrap}.chk input{width:22px;min-height:22px}
 .link{background:none;border:0;color:var(--mut);text-decoration:underline;min-height:44px}
 a{color:var(--acc);font-weight:700}
+.gp{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:4px 12px}
+.gp summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer}
+.gpl{display:flex;flex-direction:column;gap:8px;padding-bottom:12px}.gp .box{background:var(--bg)}
+.dr{display:flex;flex-direction:column;gap:6px}.dr h2{margin:0;font-size:18px}
+.hr{display:flex;gap:12px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none;touch-action:pan-x pan-y}.hr::-webkit-scrollbar{display:none}
+.bc{flex:0 0 200px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.sp s,.p s,.s s{color:var(--mut);font-weight:400}
+.box .chip{background:var(--chip)}.box .chip[aria-pressed="true"]{background:var(--on);color:var(--onink)}
 .pv{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:4px}
 .stu{background:var(--sbg);border:1px solid var(--bd);border-radius:18px;padding:14px 0 14px 14px;display:flex;flex-direction:column;gap:10px}
 .stu .row{padding-right:14px}.stu h2{margin:0;font-size:19px}
@@ -65,7 +73,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let th='auto';try{th=localStorage.getItem('cmTheme')||'auto'}catch(e){}
 const dark=()=>th=='dark'||(th=='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);
 const applyTh=()=>document.documentElement.setAttribute('data-theme',dark()?'dark':'light');applyTh();
-let U=null,P=null,D={sellers:[],products:[],orders:[],mine:[]},subs=[],pu=null,key='',view='browse',cat='All',ty='All',dr={},ap={},ord=null,msg='',err='',mode='in',pend='';
+let U=null,P=null,D={sellers:[],products:[],orders:[],mine:[],recs:[],users:[]},subs=[],pu=null,key='',view='discover',cat='All',bcat='All',hdone=0,ty='All',dr={},ap={},ord=null,msg='',err='',mode='in',pend='';
 const fmt=t=>new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 const late=o=>o.st=='Placed'&&Date.now()-o.at>864e5;
 const tag=o=>`<span class="tag${late(o)?' late':''}">${late(o)?'Late - ':''}${o.st}</span>`;
@@ -75,24 +83,38 @@ const nice=e=>({'auth/invalid-credential':'Wrong email or password.','auth/email
 const num=v=>String(v||'').replace(/\D/g,''),bwl=o=>o.bw?`<div class="s"><a href="https://wa.me/${esc(o.bw)}" target="_blank" rel="noopener">WhatsApp buyer: +${esc(o.bw)}</a></div>`:'';
 const wk=()=>'cmW_'+(P.sid||''),welcomed=()=>{try{return localStorage.getItem(wk())=='1'}catch(e){return false}};
 function welcome(){if(P.role!='seller'||welcomed())return '';const st=D.sellers.find(s=>s.id==P.sid)?.kind=='student';
-return `<div class="box ok" role="status"><div class="h">Congratulations, ${esc(P.name)}! You are approved.</div><div class="s">${esc(sn(P.sid))} is now live on Campus Market. Here is what you can do:</div><ul class="pv"><li>Add products with photos and prices</li><li>Receive orders and accept or decline them</li><li>Mark items sold out, and set a restock date so buyers can pre-order</li><li>${st?'Get featured in the Student Marketplace at the top of the page':'Be listed with the businesses on the Browse page'}</li><li>Get help from the admin if an order waits too long</li></ul><div class="s">Tip: add your WhatsApp number in My shop so buyers can reach you.</div><button class="btn" data-a="wel">Let’s start</button></div>`}
+return `<div class="box ok" role="status"><div class="h">Congratulations, ${esc(P.name)}! You are approved.</div><div class="s">${esc(sn(P.sid))} is now live on Campus Market. Here is what you can do:</div><ul class="pv"><li>Add products with photos and prices</li><li>Receive orders and accept or decline them</li><li>Mark items sold out, and set a restock date so buyers can pre-order</li><li>${st?'Get featured in the Student Marketplace at the top of the page':'Be listed with the businesses on the Browse page'}</li><li>Get help from the admin if an order waits too long</li></ul><div class="s">Tip: in My shop, add your WhatsApp number and the areas you deliver to, so buyers can find and reach you.</div><button class="btn" data-a="wel">Let’s start</button></div>`}
+const n2=v=>Number(v).toFixed(2),disc=p=>p.was>p.price?Math.round((1-p.price/p.was)*100):0;
+const priceH=p=>(p.was>p.price?'<s>'+n2(p.was)+'</s> ':'')+n2(p.price)+(disc(p)?' <span class="tag">-'+disc(p)+'%</span>':'');
+const rc=id=>D.recs.filter(r=>r.pid==id).length;
+const ls=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},ss=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let recent=ls('cmRecent',[]),area=ls('cmArea','');
+const favs=()=>P.favs||[],fol=()=>P.follows||[];
+const areasOf=sid=>{const a=D.sellers.find(s=>s.id==sid)?.areas;return a&&a.length?' · Delivers to '+a.map(esc).join(', '):''};
+function actRow(p){const fv=favs().includes(p.id),f=fol().includes(p.sid),mr=D.recs.some(r=>r.id==U.uid+'_'+p.id);
+return `<div class="s">${priceH(p)} · by ${esc(sn(p.sid))} · ${kd(p.sid)=='student'?'Student':'Business'}${areasOf(p.sid)}</div><div class="chips"><button class="chip" aria-pressed="${fv}" data-a="fav" data-v="${p.id}">${fv?'Saved':'Save'}</button><button class="chip" aria-pressed="${mr}" data-a="rec" data-v="${p.id}">Recommend (${rc(p.id)})</button><button class="chip" aria-pressed="${f}" data-a="fol" data-v="${p.sid}">${f?'Following':'Follow shop'}</button><button class="chip" data-a="share" data-v="${p.id}">Share</button></div>`}
+function ordBox(){let h='';
+if(ord&&!D.products.find(x=>x.id==ord))ord=null;
+if(ord){const p=D.products.find(x=>x.id==ord);h+=`<div class="box" id="ordp"><div class="h">${p.sold?'Pre-order':'Order'}: ${esc(p.name)}</div>${actRow(p)}<label for="bn">Your first name</label><input id="bn" value="${esc(dr.n??P.name)}"><label for="bs">Delivery spot</label><input id="bs" value="${esc(dr.sp||'')}" placeholder="e.g. Block C, near the canteen"><label for="bw">Your WhatsApp number (with country code)</label><input id="bw" inputmode="tel" value="${esc(dr.w||'')}" placeholder="e.g. 23057123456"><div class="row"><button class="btn" style="flex:1" data-a="go">Confirm</button><button class="btn alt" style="flex:1" data-a="no">Close</button></div></div>`}
+if(msg)h+=`<div class="box ok">${msg}</div>`;
+return h}
 const kd=id=>D.sellers.find(s=>s.id==id)?.kind=='student'?'student':'business';
 function soft(){const a=document.activeElement;if(!(a&&a.matches&&a.matches('#app input,#app select')))render()}
 function stop(){subs.forEach(f=>f());subs=[];pu&&pu();pu=null;key=''}
 function sub(){subs.forEach(f=>f());subs=[];
 const L=(q,k)=>subs.push(onSnapshot(q,s=>{D[k]=s.docs.map(d=>({id:d.id,...d.data()}));soft()},e=>console.error(e)));
 const o=collection(db,'orders');
-L(collection(db,'sellers'),'sellers');L(collection(db,'products'),'products');
+L(collection(db,'sellers'),'sellers');L(collection(db,'products'),'products');L(collection(db,'recs'),'recs');
 L(query(o,where('buyer','==',U.uid)),'mine');
-if(P.role=='admin')L(o,'orders');else if(P.role=='seller')L(query(o,where('sid','==',P.sid)),'orders')}
+if(P.role=='admin'){L(o,'orders');L(collection(db,'users'),'users')}else if(P.role=='seller')L(query(o,where('sid','==',P.sid)),'orders')}
 onAuthStateChanged(auth,async u=>{stop();U=u;P=null;if(!u){render();return}
 const r=doc(db,'users',u.uid);
-try{const s=await getDoc(r);if(!s.exists())await setDoc(r,{name:pend||(u.email||'').split('@')[0],role:'buyer'})}catch(e){err=nice(e)}
+try{const s=await getDoc(r);if(!s.exists())await setDoc(r,{name:pend||(u.email||'').split('@')[0],role:'buyer',email:u.email});else if(!s.data()?.email&&u.email)await updateDoc(r,{email:u.email})}catch(e){err=nice(e)}
 pu=onSnapshot(r,s=>{if(!s.exists())return;P=s.data();const k=P.role+'|'+(P.sid||'');if(k!=key){key=k;sub()}render()})});
 
-function authV(){return `<div class="box"><div class="chips"><button class="chip" aria-pressed="${mode=='in'}" data-a="mode" data-v="in">Sign in</button><button class="chip" aria-pressed="${mode=='up'}" data-a="mode" data-v="up">Create account</button></div>${mode=='up'?'<label for="an">First name</label><input id="an" autocomplete="given-name">':''}<label for="ae">Email</label><input id="ae" type="email" autocomplete="email"><label for="ap">Password (6 or more characters)</label><input id="ap" type="password" autocomplete="${mode=='in'?'current-password':'new-password'}"><button class="btn" data-a="auth">${mode=='in'?'Sign in':'Create account'}</button>${err?`<div class="er">${esc(err)}</div>`:''}</div>`}
+function authV(){return `<div class="box"><div class="chips"><button class="chip" aria-pressed="${mode=='in'}" data-a="mode" data-v="in">Sign in</button><button class="chip" aria-pressed="${mode=='up'}" data-a="mode" data-v="up">Create account</button></div>${mode=='up'?'<label for="an">First name</label><input id="an" autocomplete="given-name">':''}<label for="ae">Email</label><input id="ae" type="email" autocomplete="email"><label for="ap">Password (6 or more characters)</label><input id="ap" type="password" autocomplete="${mode=='in'?'current-password':'new-password'}">${mode=='up'?'<div class="s">Your email is visible to the admin. Your WhatsApp number is visible to the admin and to shops you order from.</div>':''}<button class="btn" data-a="auth">${mode=='in'?'Sign in':'Create account'}</button>${err?`<div class="er">${esc(err)}</div>`:''}</div>`}
 
-function carCard(p,clone){const im=String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}">`:esc(p.name[0]);return `<button class="scard" data-a="ord" data-v="${p.id}"${clone?' tabindex="-1" aria-hidden="true"':''}><span class="simg" style="background:${tint(p.name)}">${im}</span><span class="sn">${esc(p.name)}</span><span class="sp">${Number(p.price).toFixed(2)}${p.sold?' · back '+esc(p.back):''}</span><span class="ss">by ${esc(sn(p.sid))}</span></button>`}
+function carCard(p,clone){const im=String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}">`:esc(p.name[0]);return `<button class="scard" data-a="ord" data-v="${p.id}"${clone?' tabindex="-1" aria-hidden="true"':''}><span class="simg" style="background:${tint(p.name)}">${im}</span><span class="sn">${esc(p.name)}</span><span class="sp">${priceH(p)}${p.sold?' · back '+esc(p.back):''}</span><span class="ss">by ${esc(sn(p.sid))}</span></button>`}
 function stu(){
 const ok=new Set(D.sellers.filter(s=>s.ok).map(s=>s.id));
 const ps=D.products.filter(p=>ok.has(p.sid)&&kd(p.sid)=='student'&&!(p.sold&&!p.back));
@@ -121,12 +143,43 @@ document.addEventListener('focusout',e=>{if(inSm(e))rl()});
 document.addEventListener('scroll',e=>{const el=e.target;if(!el||el.id!='sm')return;const h=+el.dataset.half;
 if(Math.abs(el.scrollLeft-lastSet)>1.5)lastUser=performance.now();
 if(h){let x=el.scrollLeft;if(x<h)x+=h;else if(x>=2*h)x-=h;if(x!=el.scrollLeft){el.scrollLeft=x;lastSet=x}}},true);
+function discover(){
+const ok=new Set(D.sellers.filter(s=>s.ok).map(s=>s.id)),day=Math.floor(Date.now()/864e5),w7=Date.now()-6048e5;
+const ps=D.products.filter(p=>ok.has(p.sid)&&!(p.sold&&!p.back)),by=(a,f)=>[...a].sort((x,y)=>f(y)-f(x));
+const rcw=id=>D.recs.filter(r=>r.pid==id&&r.at>w7).length,hs=t=>[...t].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
+const okS=D.sellers.filter(s=>s.ok),areas=[...new Set(okS.flatMap(s=>s.areas||[]))],mySid=new Set(D.mine.map(o=>o.sid));
+const cats={},bump=(id,w)=>{const p=D.products.find(x=>x.id==id);if(p)cats[p.cat]=(cats[p.cat]||0)+w};
+favs().forEach(i=>bump(i,3));recent.forEach(i=>bump(i,1));D.mine.forEach(o=>bump(o.pid,2));
+const top=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]),seen=new Set([...recent,...favs()]);
+const pick=ids=>ids.map(i=>ps.find(p=>p.id==i)).filter(Boolean);
+const R=(t,sub,l)=>l.length?`<section class="dr"><h2>${t}</h2><div class="s">${sub}</div><div class="hr">${l.map(p=>carCard(p,false)).join('')}</div></section>`:'';
+const near=area?ps.filter(p=>(D.sellers.find(s=>s.id==p.sid)?.areas||[]).includes(area)).slice(0,12):[];
+const sec=[
+R('Near you','Shops that deliver to '+esc(area),near),
+R('From shops you follow','Newest items from shops you follow',by(ps.filter(p=>fol().includes(p.sid)),p=>p.at||0).slice(0,10)),
+R('For you','Based on what you saved, viewed and ordered',top.length?ps.filter(p=>top.includes(p.cat)&&!seen.has(p.id)).slice(0,10):[]),
+R('Recently viewed','Pick up where you left off',pick(recent).slice(0,10)),
+R('New arrivals','Recently added by sellers',by(ps.filter(p=>p.at),p=>p.at).slice(0,10)),
+R('Trending this week','Most recommended by students this week',by(ps.filter(p=>rcw(p.id)>0),p=>rcw(p.id)).slice(0,10)),
+R('Offers and discounts','Sellers show the original price, so you can see the saving',ps.filter(p=>disc(p)>0).slice(0,12)),
+R('Affordable finds','The lowest prices right now',ps.length>=4?[...ps].sort((a,b)=>a.price-b.price).slice(0,8):[]),
+R('Student favourites','Student items other students recommend',by(ps.filter(p=>kd(p.sid)=='student'&&rc(p.id)>0),p=>rc(p.id)).slice(0,10)),
+R('Student offers','Real savings on student items',ps.filter(p=>kd(p.sid)=='student'&&disc(p)>0).slice(0,10)),
+R('Hidden gems','Items that have not had much attention yet',ps.filter(p=>rc(p.id)<=1&&!seen.has(p.id)&&!mySid.has(p.sid)).sort((a,b)=>hs(a.id+day)-hs(b.id+day)).slice(0,8)),
+R('Your saved items','Items you saved',pick(favs()))].join('');
+const bcard=x=>{const f=fol().includes(x.id),n=ps.filter(p=>p.sid==x.id).length;return `<div class="bc"><div class="t">${esc(x.name)}</div><div class="s">${x.kind=='student'?'Student':'Business'} · ${n} item${n==1?'':'s'}${x.areas&&x.areas.length?'<br>Delivers to '+x.areas.map(esc).join(', '):''}${mySid.has(x.id)?'<br>You have ordered here':''}</div><button class="btn${f?' alt':''}" data-a="fol" data-v="${x.id}">${f?'Following':'Follow'}</button></div>`};
+const B=(t,sub,l,extra)=>l.length?`<section class="dr"><h2>${t}</h2><div class="s">${sub}</div>${extra||''}<div class="hr">${l.map(bcard).join('')}</div></section>`:'';
+const pop=by(okS.filter(x=>D.recs.some(r=>r.sid==x.id)),x=>D.recs.filter(r=>r.sid==x.id).length).slice(0,10);
+const bcs=['All',...new Set(ps.map(p=>p.cat))],shops=okS.filter(x=>bcat=='All'||ps.some(p=>p.sid==x.id&&p.cat==bcat)).sort((a,b)=>(mySid.has(a.id)-mySid.has(b.id))||hs(a.id+day)-hs(b.id+day));
+const bch=`<div class="chips">${bcs.map(c=>`<button class="chip" aria-pressed="${c==bcat}" data-a="bcat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
+const shopH=B('Popular shops','Shops with the most student recommendations',pop)+B('Explore shops','Shops you have not tried come first',shops,bch);
+const picker=areas.length?`<label for="ar">Your area</label><select id="ar" data-a="area"><option value="">Anywhere</option>${areas.map(a=>`<option${a==area?' selected':''}>${esc(a)}</option>`).join('')}</select>`:'';
+return `<div class="s">Find something new from sellers around you.</div>${picker}${ordBox()}${sec||shopH?sec+shopH:'<div class="box"><div class="t">Nothing to discover yet.</div><div class="s">Check back soon, or open Browse to see everything.</div></div>'}`}
 function browse(){
 const ok=new Set(D.sellers.filter(s=>s.ok).map(s=>s.id)),ps=D.products.filter(p=>ok.has(p.sid)),cats=['All',...new Set(ps.map(p=>p.cat))];
 let h=stu()+`<div class="chips">${cats.map(c=>`<button class="chip" aria-pressed="${c==cat}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="chips">${[['All','All sellers'],['business','Businesses'],['student','Student items']].map(t=>`<button class="chip" aria-pressed="${t[0]==ty}" data-a="ty" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`;
-if(ord){const p=D.products.find(x=>x.id==ord);h+=`<div class="box" id="ordp"><div class="h">${p.sold?'Pre-order':'Order'}: ${esc(p.name)}</div><label for="bn">Your first name</label><input id="bn" value="${esc(dr.n??P.name)}"><label for="bs">Delivery spot</label><input id="bs" value="${esc(dr.sp||'')}" placeholder="e.g. Block C, near the canteen"><label for="bw">Your WhatsApp number (with country code)</label><input id="bw" inputmode="tel" value="${esc(dr.w||'')}" placeholder="e.g. 23057123456"><div class="row"><button class="btn" style="flex:1" data-a="go">Confirm</button><button class="btn alt" style="flex:1" data-a="no">Close</button></div></div>`}
-if(msg)h+=`<div class="box ok">${msg}</div>`;
-h+=`<div class="grid">${ps.filter(p=>(cat=='All'||p.cat==cat)&&(ty=='All'||kd(p.sid)==ty)).map(p=>{const b=p.sold&&!p.back?'<span class="btn off">Sold out</span>':`<button class="btn" data-a="ord" data-v="${p.id}">${p.sold?'Pre-order (back '+esc(p.back)+')':'Order'}</button>`;return `<div class="card"><div class="ph" style="background:${tint(p.name)}">${String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover">`:esc(p.name[0])}</div><div class="b"><div class="n">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))} · ${kd(p.sid)=='student'?'Student':'Business'}</div><div class="p">${Number(p.price).toFixed(2)}</div>${b}</div></div>`}).join('')}</div>`;
+h+=ordBox();
+h+=`<div class="grid">${ps.filter(p=>(cat=='All'||p.cat==cat)&&(ty=='All'||kd(p.sid)==ty)).map(p=>{const b=p.sold&&!p.back?'<span class="btn off">Sold out</span>':`<button class="btn" data-a="ord" data-v="${p.id}">${p.sold?'Pre-order (back '+esc(p.back)+')':'Order'}</button>`;return `<div class="card"><div class="ph" style="background:${tint(p.name)}">${String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover">`:esc(p.name[0])}</div><div class="b"><div class="n">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))} · ${kd(p.sid)=='student'?'Student':'Business'}</div><div class="p">${priceH(p)}</div>${b}</div></div>`}).join('')}</div>`;
 const my=[...D.mine].sort(byNew);
 if(my.length)h+='<h2>My orders</h2>'+my.map(o=>{const open=!['Completed','Cancelled','Declined'].includes(o.st);return `<div class="box"><div class="row"><div class="t">${esc(o.pname)}</div>${tag(o)}</div><div class="s">${fmt(o.at)} · ${esc(o.spot)}</div>${o.why?`<div class="s">Reason: ${esc(o.why)}</div>`:''}${open?`<div class="row"><select id="r${o.id}" aria-label="Cancel reason"><option>Changed my mind</option><option>Wrong item</option><option>Seller too slow</option></select><button class="btn no" data-a="cx" data-v="${o.id}">Cancel</button></div>`:''}</div>`}).join('');
 if(P.role=='buyer'){const m=D.sellers.find(s=>s.owner==U.uid);h+=m?`<div class="box ok"><div class="h">Thanks for applying!</div><div class="s">Your shop <b>${esc(m.name)}</b> is being reviewed. Once the admin approves it, you will see a welcome message here.</div></div>`:`<div class="box"><div class="h">Want to sell?</div><div class="s">Run a business or just have items to sell? Both are welcome.</div><label for="sb">Shop name (or just your own name)</label><input id="sb" value="${esc(ap.n||'')}"><label for="sk">I am a</label><select id="sk"><option value="business">Business</option><option value="student"${ap.k=='student'?' selected':''}>Student selling my own items</option></select><label for="sw">WhatsApp number (with country code, e.g. 23057123456)</label><input id="sw" inputmode="tel" value="${esc(ap.w||'')}"><button class="btn" data-a="apply">Apply to sell</button></div>`}
@@ -134,12 +187,19 @@ return h}
 
 function seller(){
 const ps=D.products.filter(p=>p.sid==P.sid),os=[...D.orders].sort(byNew);
-let h=`<div class="h">${esc(sn(P.sid))}</div><div class="box"><label for="mw">Your WhatsApp number (with country code)</label><input id="mw" inputmode="tel" value="${esc(D.sellers.find(s=>s.id==P.sid)?.wa||'')}"><button class="btn" data-a="savewa">Save number</button></div><div class="box"><div class="row"><div class="h">New orders</div><div class="num">${os.filter(o=>o.st=='Placed').length}</div></div></div>`;
+let h=`<div class="h">${esc(sn(P.sid))}</div><div class="box"><label for="mw">Your WhatsApp number (with country code)</label><input id="mw" inputmode="tel" value="${esc(D.sellers.find(s=>s.id==P.sid)?.wa||'')}"><button class="btn" data-a="savewa">Save number</button><label for="ma">Areas you deliver to (separate with commas, e.g. Block C, Canteen)</label><input id="ma" value="${esc((D.sellers.find(s=>s.id==P.sid)?.areas||[]).join(', '))}"><button class="btn" data-a="savearea">Save areas</button></div><div class="box"><div class="row"><div class="h">New orders</div><div class="num">${os.filter(o=>o.st=='Placed').length}</div></div></div>`;
 h+=os.map(o=>{const a={Placed:[['acc','Accept',''],['dec','Decline','no']],Accepted:[['pen','Move to pending','']],Pending:[['com','Complete','']]}[o.st]||[];return `<div class="box${late(o)?' lateb':''}"><div class="row"><div class="t">${esc(o.name)} - ${esc(o.pname)}</div>${tag(o)}</div><div class="s">${esc(o.spot)} · ${fmt(o.at)}</div>${bwl(o)}${o.why?`<div class="s">Reason: ${esc(o.why)}</div>`:''}${o.st=='Scheduled'?'<div class="s">Becomes a real order when you mark the product back in stock.</div>':''}${a.length?`<div class="row">${a.map(x=>`<button class="btn ${x[2]}" style="flex:1" data-a="${x[0]}" data-v="${o.id}">${x[1]}</button>`).join('')}</div>`:''}</div>`}).join('')||'<div class="s">No orders yet.</div>';
-h+='<h2>Your products</h2>'+ps.map(p=>`<div class="box"><div class="row"><div class="t">${esc(p.name)} (${Number(p.price).toFixed(2)})</div><label class="chk"><input type="checkbox" data-a="sold" data-v="${p.id}"${p.sold?' checked':''}>Sold out</label></div><label class="s">Change photo<input type="file" accept="image/*" data-a="pic" data-v="${p.id}"></label>${p.sold?`<div class="row"><input type="date" aria-label="Restock date" value="${esc(p.back)}" data-a="back" data-v="${p.id}"><button class="btn" style="white-space:nowrap" data-a="stock" data-v="${p.id}">Back in stock</button></div>`:''}</div>`).join('');
-h+=`<div class="box"><div class="h">Add a product</div><label for="np">Name</label><input id="np"><label for="npr">Price</label><input id="npr" inputmode="decimal"><label for="nc">Category</label><select id="nc"><option>Food</option><option>Crafts</option><option>Clothing</option><option>Books</option><option>Used items</option><option>Other</option></select><label for="npi">Photo (optional)</label><input id="npi" type="file" accept="image/*"><button class="btn" data-a="add">Add product</button></div>`;
+h+='<h2>Your products</h2>'+ps.map(p=>`<div class="box"><div class="row"><div class="t">${esc(p.name)} (${Number(p.price).toFixed(2)})</div><label class="chk"><input type="checkbox" data-a="sold" data-v="${p.id}"${p.sold?' checked':''}>Sold out</label></div><label class="s">Original price (clear it to end a sale)<input data-a="was" data-v="${p.id}" inputmode="decimal" value="${p.was||''}"></label><label class="s">Change photo<input type="file" accept="image/*" data-a="pic" data-v="${p.id}"></label>${p.sold?`<div class="row"><input type="date" aria-label="Restock date" value="${esc(p.back)}" data-a="back" data-v="${p.id}"><button class="btn" style="white-space:nowrap" data-a="stock" data-v="${p.id}">Back in stock</button></div>`:''}</div>`).join('');
+h+=`<div class="box"><div class="h">Add a product</div><label for="np">Name</label><input id="np"><label for="npr">Price</label><input id="npr" inputmode="decimal"><label for="nc">Category</label><select id="nc"><option>Food</option><option>Crafts</option><option>Clothing</option><option>Books</option><option>Used items</option><option>Other</option></select><label for="npw">Original price (only if this is on sale)</label><input id="npw" inputmode="decimal"><label for="npi">Photo (optional)</label><input id="npi" type="file" accept="image/*"><button class="btn" data-a="add">Add product</button></div>`;
 return h}
 
+let gopen=new Set();
+function people(){
+const us=[...D.users].sort((a,b)=>(a.name||'').localeCompare(b.name||'')),sl=u=>D.sellers.find(x=>x.id==u.sid);
+const G=[['Admins',us.filter(u=>u.role=='admin')],['Business sellers',us.filter(u=>u.role=='seller'&&sl(u)?.kind!='student')],['Student sellers',us.filter(u=>u.role=='seller'&&sl(u)?.kind=='student')],['Buyers',us.filter(u=>u.role=='buyer')]];
+const row=u=>{const x=sl(u),w=num(x?.wa||u.wa),ap=D.sellers.find(y=>y.owner==u.id&&!y.ok);return `<div class="box"><div class="t">${esc(u.name||'No name')}${x?' · '+esc(x.name):''}${ap?' · applied to sell: '+esc(ap.name):''}</div><div class="s">${u.email?`<a href="mailto:${esc(u.email)}">${esc(u.email)}</a>`:'No email yet (it appears after their next sign-in)'}</div><div class="s">${w?`<a href="https://wa.me/${w}" target="_blank" rel="noopener">WhatsApp +${w}</a>`:'No WhatsApp number yet'}</div></div>`};
+return `<h2>People</h2><div class="s">${us.length} people signed up. Tap a group to open it.</div>`+G.map(g=>`<details class="gp" data-g="${g[0]}"${gopen.has(g[0])?' open':''}><summary>${g[0]} (${g[1].length})</summary><div class="gpl">${g[1].map(row).join('')||'<div class="s">None yet</div>'}</div></details>`).join('')}
+document.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.g){d.open?gopen.add(d.dataset.g):gopen.delete(d.dataset.g)}},true);
 function admin(){
 const os=D.orders,r=os.filter(o=>Date.now()-o.at<864e5),L=os.filter(late).length,pend=D.sellers.filter(s=>!s.ok);
 let h=`<div class="row">${[['Orders',r.length],['Accepted',r.filter(o=>['Accepted','Pending','Completed'].includes(o.st)).length],['Declined',r.filter(o=>o.st=='Declined').length]].map(x=>`<div class="stat"><div class="num">${x[1]}</div><div class="s">${x[0]}</div></div>`).join('')}</div><div class="s">Last 24 hours, all businesses</div>`;
@@ -147,14 +207,15 @@ h+=`<div class="box${L?' lateb':''}"><div class="row"><div class="h">Needs atten
 if(pend.length)h+='<h2>Sellers waiting for approval</h2>'+pend.map(s=>`<div class="box"><div class="t">${esc(s.name)}</div><div class="s">${s.kind=='student'?'Student selling own items':'Business'} · ${s.wa?'+'+esc(s.wa):'no number'}</div><div class="row"><button class="btn" style="flex:1" data-a="appr" data-v="${s.id}">Approve</button><button class="btn no" style="flex:1" data-a="rej" data-v="${s.id}">Reject</button></div></div>`).join('');
 h+='<h2>Orders by business</h2>';
 D.sellers.filter(s=>s.ok).forEach(s=>{const l=os.filter(o=>o.sid==s.id).sort(byNew);h+=`<div class="t">${esc(s.name)}</div>`+(l.map(o=>`<div class="box${late(o)?' lateb':''}"><div class="row"><div class="t">${esc(o.name)} - ${esc(o.pname)}</div>${tag(o)}</div><div class="s">${fmt(o.at)}${o.why?' · '+esc(o.why):''}</div>${bwl(o)}</div>`).join('')||'<div class="s">No orders</div>')});
-h+='<h2>All products</h2>'+D.products.map(p=>`<div class="box"><div class="row"><div><div class="t">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))}</div></div><button class="btn no" data-a="del" data-v="${p.id}">Remove</button></div></div>`).join('');
+h+=people()+'<h2>All products</h2>'+D.products.map(p=>`<div class="box"><div class="row"><div><div class="t">${esc(p.name)}</div><div class="s">${esc(sn(p.sid))}</div></div><button class="btn no" data-a="del" data-v="${p.id}">Remove</button></div></div>`).join('');
 return h}
 
 function render(){let h;
+if(!hdone&&P&&D.products.length){hdone=1;const m=location.hash.match(/^#p-(.+)$/),p=m&&D.products.find(x=>x.id==m[1]);if(p){ord=p.id;view='discover'}}
 if(!U||!P)h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="theme">${dark()?'Light mode':'Dark mode'}</button></div>`+(U?'<div class="s">Loading...</div>':authV());
-else{const tabs=[['browse','Browse'],...(P.role=='seller'?[['seller','My shop']]:[]),...(P.role=='admin'?[['admin','Admin']]:[])];
+else{const tabs=[['discover','Discover'],['browse','Browse'],...(P.role=='seller'?[['seller','My shop']]:[]),...(P.role=='admin'?[['admin','Admin']]:[])];
 if(!tabs.some(t=>t[0]==view))view='browse';
-h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="out">Sign out</button></div><div class="row"><div class="s">Hi ${esc(P.name)} (${P.role})</div><button class="link" data-a="theme">${dark()?'Light mode':'Dark mode'}</button></div>`+welcome()+(tabs.length>1?`<div class="chips">${tabs.map(t=>`<button class="chip" aria-pressed="${t[0]==view}" data-a="view" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`:'')+({browse,seller,admin}[view])()+(err?`<div class="er">${esc(err)}</div>`:'')}
+h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="out">Sign out</button></div><div class="row"><div class="s">Hi ${esc(P.name)} (${P.role})</div><button class="link" data-a="theme">${dark()?'Light mode':'Dark mode'}</button></div>`+welcome()+(tabs.length>1?`<div class="chips">${tabs.map(t=>`<button class="chip" aria-pressed="${t[0]==view}" data-a="view" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`:'')+({discover,browse,seller,admin}[view])()+(err?`<div class="er">${esc(err)}</div>`:'')}
 const old=$('#sm');pos=old?old.scrollLeft:0;$('#app').innerHTML=h;initCar()}
 
 function shrink(f){return new Promise((ok,no)=>{const i=new Image(),u=URL.createObjectURL(f);i.onload=()=>{const r=Math.min(1,480/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*r);c.height=Math.round(i.height*r);c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',0.7))};i.onerror=()=>no(new Error('image'));i.src=u})}
@@ -165,15 +226,22 @@ else if(a=='auth'){const e=$('#ae').value.trim(),p=$('#ap').value;if(mode=='up')
 else if(a=='out')await signOut(auth);
 else if(a=='view'){view=v;msg=''}
 else if(a=='wel'){try{localStorage.setItem(wk(),'1')}catch(e){}view='seller'}
+else if(a=='fav'||a=='fol'){const k=a=='fav'?'favs':'follows',cur=k=='favs'?favs():fol();await updateDoc(doc(db,'users',U.uid),{[k]:cur.includes(v)?cur.filter(x=>x!=v):[...cur,v]})}
+else if(a=='rec'){const id=U.uid+'_'+v;if(D.recs.some(r=>r.id==id))await deleteDoc(doc(db,'recs',id));else await setDoc(doc(db,'recs',id),{pid:v,sid:D_('products',v).sid,uid:U.uid,at:Date.now()})}
+else if(a=='share'){const p=D_('products',v),u=location.origin+location.pathname+'#p-'+v;try{if(navigator.share)await navigator.share({title:'Campus Market',text:p.name,url:u});else{await navigator.clipboard.writeText(u);msg='Link copied. Paste it in WhatsApp to share.'}}catch(e){}}
+else if(a=='area'){area=el.value;ss('cmArea',area)}
+else if(a=='bcat')bcat=v;
+else if(a=='savearea'){const l=$('#ma').value.split(',').map(x=>x.trim().slice(0,30)).filter(Boolean).slice(0,8);await updateDoc(doc(db,'sellers',P.sid),{areas:l})}
+else if(a=='was'){const p=D_('products',v),w=parseFloat(el.value);if(!el.value.trim()||w===0)await updateDoc(doc(db,'products',v),{was:0});else if(w>p.price&&w<=p.price*5)await updateDoc(doc(db,'products',v),{was:w});else err='The original price must be higher than the current price, and at most 5 times it.'}
 else if(a=='theme'){th=dark()?'light':'dark';try{localStorage.setItem('cmTheme',th)}catch(e){}applyTh()}
 else if(a=='cat')cat=v;
 else if(a=='ty')ty=v;
-else if(a=='ord'){ord=v;msg='';dr={};setTimeout(()=>$('#ordp')?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}),50)}
+else if(a=='ord'){ord=v;msg='';dr={};recent=[v,...recent.filter(x=>x!=v)].slice(0,12);ss('cmRecent',recent);setTimeout(()=>$('#ordp')?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}),50)}
 else if(a=='no')ord=null;
 else if(a=='go'){const n=$('#bn').value.trim(),sp=$('#bs').value.trim(),p=D_('products',ord);dr={n:$('#bn').value,sp:$('#bs').value,w:$('#bw').value};
 const w=num($('#bw').value);
 if(!n||!sp||w.length<8||w.length>15)msg='Please type your first name, delivery spot and WhatsApp number (with country code).';
-else{await addDoc(collection(db,'orders'),{pid:p.id,sid:p.sid,pname:p.name,buyer:U.uid,name:n,spot:sp,at:Date.now(),st:p.sold?'Scheduled':'Placed',why:'',bw:w});
+else{await addDoc(collection(db,'orders'),{pid:p.id,sid:p.sid,pname:p.name,buyer:U.uid,name:n,spot:sp,at:Date.now(),st:p.sold?'Scheduled':'Placed',why:'',bw:w});await updateDoc(doc(db,'users',U.uid),{wa:w}).catch(()=>{});
 msg=`Order sent, thank you ${esc(n)}. <a href="https://wa.me/${num(D_('sellers',p.sid)?.wa)}?text=${encodeURIComponent('Hi, I just ordered '+p.name+' on Campus Market. - '+n)}" target="_blank" rel="noopener">Open WhatsApp to message the seller</a>`;ord=null}}
 else if(a=='cx')await updateDoc(doc(db,'orders',v),{st:'Cancelled',why:$('#r'+v).value});
 else if(a=='apply'){const n=$('#sb').value.trim(),w=num($('#sw').value);ap={n:$('#sb').value,k:$('#sk').value,w:$('#sw').value};if(!n||w.length<8||w.length>15)err='Please type a name and a WhatsApp number with country code.';else await addDoc(collection(db,'sellers'),{name:n,owner:U.uid,ok:false,kind:$('#sk').value,wa:w})}
@@ -181,7 +249,7 @@ else if(['acc','dec','pen','com'].includes(a))await updateDoc(doc(db,'orders',v)
 else if(a=='sold'){const p=D_('products',v);if(el.checked)await updateDoc(doc(db,'products',v),{sold:true});else await restock(p)}
 else if(a=='back')await updateDoc(doc(db,'products',v),{back:el.value});
 else if(a=='stock')await restock(D_('products',v));
-else if(a=='add'){const n=$('#np').value.trim(),pr=parseFloat($('#npr').value);if(n&&pr>=0){const f=$('#npi').files[0];await addDoc(collection(db,'products'),{sid:P.sid,name:n,cat:$('#nc').value,price:pr,sold:false,back:'',img:f?await shrink(f):''})}}
+else if(a=='add'){const n=$('#np').value.trim(),pr=parseFloat($('#npr').value);if(n&&pr>=0){const f=$('#npi').files[0];await addDoc(collection(db,'products'),{sid:P.sid,name:n,cat:$('#nc').value,price:pr,sold:false,back:'',img:f?await shrink(f):'',at:Date.now(),was:(()=>{const w=parseFloat($('#npw').value);return w>pr&&w<=pr*5?w:0})()})}}
 else if(a=='savewa'){const w=num($('#mw').value);if(w.length<8||w.length>15)err='Please type a WhatsApp number with country code.';else await updateDoc(doc(db,'sellers',P.sid),{wa:w})}
 else if(a=='pic'){const f=el.files[0];if(f)await updateDoc(doc(db,'products',v),{img:await shrink(f)})}
 else if(a=='appr'){const s=D_('sellers',v),b=writeBatch(db);b.update(doc(db,'sellers',v),{ok:true});b.update(doc(db,'users',s.owner),{role:'seller',sid:v});await b.commit()}
