@@ -102,10 +102,16 @@ button.ph{border:0;width:100%;padding:0;cursor:pointer;font-family:inherit}
 .sn{padding-top:8px;font-weight:700;font-size:14px}.sp{padding:0 10px;font-weight:700}
 .ss{font-size:12px;color:var(--mut)}
 @media (prefers-reduced-motion:reduce){.scard{transition:none}.scard:hover{transform:none}}.er{color:var(--red);font-size:13px}
+
+#inst{display:none;position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:50;max-width:460px;margin:0 auto;background:var(--card);color:var(--ink);border:1px solid var(--acc);border-radius:14px;padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+#inst.on{display:block}#inst .ir{display:flex;align-items:center;gap:10px}#inst img{width:40px;height:40px;border-radius:10px}#inst .it{flex:1;font-size:13px;line-height:1.35}#inst .it b{display:block;font-size:14px}
+#inst .btn{min-height:40px;padding:0 14px}#inst .x{background:none;border:0;color:var(--ink);font-size:20px;min-width:36px;min-height:44px}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="inst" role="region" aria-label="Install app"></div>
+
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendEmailVerification,reload} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -537,6 +543,22 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&
 document.addEventListener('change',e=>{const b=e.target;if(b.dataset.a&&b.matches('input,select,textarea')){b.blur();act(b.dataset.a,b.dataset.v,b)}});
 render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+(function(){const box=document.getElementById('inst');let ev=null;
+const stand=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+const hid=()=>{try{return Date.now()-(+localStorage.getItem('cmInstX')||0)<6048e5}catch(e){return false}};
+const hide=()=>box.classList.remove('on');
+function show(){if(stand()||hid())return;
+if(ev)box.innerHTML='<div class="ir"><img src="icon-192.png" alt=""><div class="it"><b>Install Campus Market</b>Open it like a real app, full screen.</div><button class="btn" id="instgo">Install</button><button class="x" id="instx" aria-label="Not now">×</button></div>';
+else if(ios)box.innerHTML='<div class="ir"><img src="icon-192.png" alt=""><div class="it"><b>Install Campus Market</b>Tap the Share button, then Add to Home Screen.</div><button class="x" id="instx" aria-label="Not now">×</button></div>';
+else return;
+box.classList.add('on');
+const g=document.getElementById('instgo');if(g)g.onclick=async()=>{try{ev.prompt();await ev.userChoice}catch(e){}ev=null;hide()};
+document.getElementById('instx').onclick=()=>{try{localStorage.setItem('cmInstX',String(Date.now()))}catch(e){}hide()}}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();ev=e;show()});
+window.addEventListener('appinstalled',()=>{ev=null;hide()});
+if(ios)setTimeout(show,2500)})();
+
 document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.id=='mt'){e.preventDefault();act('send')}if(e.key=='Enter'&&e.target.id=='sq'){e.preventDefault();act('search')}});
 setInterval(()=>{if(U&&P)soft()},60000);
 </script>
