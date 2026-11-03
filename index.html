@@ -108,7 +108,7 @@ button.ph{border:0;width:100%;padding:0;cursor:pointer;font-family:inherit}
 <div id="app"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendEmailVerification,reload} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,writeBatch,increment,orderBy,limit,onSnapshot,query,where} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const app=initializeApp({apiKey:"AIzaSyB6S7bCoAbVVgkFYW0gBahBmBynvoWpIrw",authDomain:"campus-market-290b9.firebaseapp.com",projectId:"campus-market-290b9",storageBucket:"campus-market-290b9.firebasestorage.app",messagingSenderId:"529660883069",appId:"1:529660883069:web:fd8e5c2a9f0e7c1e688114"});
 const auth=getAuth(app),db=getFirestore(app);
@@ -117,7 +117,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let th='auto';try{th=localStorage.getItem('cmTheme')||'auto'}catch(e){}
 const dark=()=>th=='dark'||(th=='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);
 const applyTh=()=>document.documentElement.setAttribute('data-theme',dark()?'dark':'light');applyTh();
-let U=null,P=null,D={sellers:[],products:[],orders:[],mine:[],recs:[],users:[],audit:[],msgsB:[],msgsS:[],reviews:[],reports:[]},subs=[],pu=null,key='',view='discover',cat='All',bcat='All',hdone=0,ty='All',dr={},ap={},rcId=null,shopId=null,chat=null,prevView='discover',of=false,ord=null,msg='',err='',mode='in',pend='';
+let U=null,P=null,D={sellers:[],products:[],orders:[],mine:[],recs:[],users:[],audit:[],msgsB:[],msgsS:[],reviews:[],reports:[]},subs=[],pu=null,key='',view='discover',cat='All',bcat='All',hdone=0,ty='All',dr={},ap={},rcId=null,shopId=null,chat=null,prevView='discover',of=false,ord=null,msg='',err='',mode='in',pend='',sent=0,sentAt=0;
 const fmt=t=>new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 const late=o=>o.st=='Placed'&&Date.now()-o.at>864e5;
 const tag=o=>`<span class="tag${late(o)?' late':''}">${late(o)?'Late - ':''}${o.st}</span>`;
@@ -174,11 +174,14 @@ const o=collection(db,'orders');
 L(collection(db,'sellers'),'sellers');L(collection(db,'products'),'products');L(collection(db,'recs'),'recs');L(collection(db,'reviews'),'reviews');
 L(query(o,where('buyer','==',U.uid)),'mine');const mc=collection(db,'msgs');L(query(mc,where('buyer','==',U.uid)),'msgsB');if(P.role=='seller')L(query(mc,where('sid','==',P.sid)),'msgsS');
 if(P.role=='admin'){L(o,'orders');L(collection(db,'users'),'users');L(collection(db,'reports'),'reports');L(query(collection(db,'audit'),orderBy('at','desc'),limit(100)),'audit')}else if(P.role=='seller')L(query(o,where('sid','==',P.sid)),'orders')}
-onAuthStateChanged(auth,async u=>{stop();U=u;P=null;if(!u){render();return}
+async function sendVer(){if(!U||Date.now()-sentAt<30000)return;sentAt=Date.now();try{await sendEmailVerification(U);sent=1}catch(e){err=String(e.code).includes('too-many')?'Too many emails sent. Please wait a few minutes and try again.':nice(e)}}
+onAuthStateChanged(auth,async u=>{stop();U=u;P=null;sent=0;if(!u){render();return}
+if(!u.emailVerified){render();await sendVer();render();return}
 const r=doc(db,'users',u.uid);
 try{const s=await getDoc(r);if(!s.exists())await setDoc(r,{name:pend||(u.email||'').split('@')[0],role:'buyer',email:u.email,at:Date.now()});else if(!s.data()?.email&&u.email)await updateDoc(r,{email:u.email})}catch(e){err=nice(e)}
 pu=onSnapshot(r,s=>{if(!s.exists())return;P=s.data();const k=P.role+'|'+(P.sid||'');if(k!=key){key=k;sub()}render()})});
 
+function verV(){return `<div class="box"><h2>Verify your email</h2><div class="s">${sent?'We sent a link to':'We need to confirm'} <b>${esc(U.email||'')}</b>. Tap the link in that email, then come back here and press the button below. If you cannot find it, check your spam or junk folder.</div><button class="btn" data-a="verdone">I have verified my email</button><div style="height:8px"></div><button class="btn alt" data-a="verresend">Resend email</button><div style="height:8px"></div><button class="link" data-a="out">Sign out / use a different email</button>${msg?`<div class="s" role="status">${esc(msg)}</div>`:''}${err?`<div class="er">${esc(err)}</div>`:''}</div>`}
 function authV(){return `<div class="box"><div class="chips"><button class="chip" aria-pressed="${mode=='in'}" data-a="mode" data-v="in">Sign in</button><button class="chip" aria-pressed="${mode=='up'}" data-a="mode" data-v="up">Create account</button></div>${mode=='up'?'<label for="an">First name</label><input id="an" autocomplete="given-name">':''}<label for="ae">Email</label><input id="ae" type="email" autocomplete="email"><label for="ap">Password (6 or more characters)</label><input id="ap" type="password" autocomplete="${mode=='in'?'current-password':'new-password'}">${mode=='up'?'<div class="s">Your email is visible to the admin. Your WhatsApp number is visible to the admin and to shops you order from.</div>':''}<button class="btn" data-a="auth">${mode=='in'?'Sign in':'Create account'}</button>${err?`<div class="er">${esc(err)}</div>`:''}</div>`}
 
 function carCard(p,clone){const im=String(p.img||'').startsWith('data:image/')?`<img src="${esc(p.img)}" alt="${esc(p.name)}">`:esc(p.name[0]);return `<button class="scard" data-a="ord" data-v="${p.id}"${clone?' tabindex="-1" aria-hidden="true"':''}><span class="simg" style="background:${tint(p.name)}">${im}</span><span class="sn">${esc(p.name)}</span><span class="sp">${priceH(p)}${so(p)&&p.back?' · back '+esc(p.back):''}</span><span class="ss">by ${esc(sn(p.sid))}</span></button>`}
@@ -428,11 +431,11 @@ const t=view=='home'?['Hello, '+esc(P.name)+'!','Find what you need on campus']:
 const sw=P.role=='admin'?[mode=='adm'?['cus','Customer view','🛍️']:['adm','Admin view','🛡️']]:P.role=='seller'?[mode=='biz'?['cus','Customer view','🛍️']:['biz','Business view','🏪']]:[];
 const bn=NAV.cus.filter(n=>['home','orders','favs','msgs','profile'].includes(n[0]));
 return `<div class="shell"><aside class="side" aria-label="Main menu"><div class="brand"><span aria-hidden="true">🛍️</span> Campus Market</div>${nav.map(n=>it(n,'sb')).join('')}<div class="grow"></div>${sw.map(s=>`<button class="sb" data-a="swmode" data-v="${s[0]}"><span aria-hidden="true">${s[2]}</span><span>Switch to ${s[1]}</span></button>`).join('')}<button class="sb" data-a="theme"><span aria-hidden="true">🌓</span><span>${dark()?'Light mode':'Dark mode'}</span></button><button class="sb" data-a="out"><span aria-hidden="true">↩</span><span>Logout</span></button></aside>
-<main class="main${mode=='cus'?' hasb':''}"><header class="top"><div><h1>${t[0]}</h1>${t[1]?`<div class="s">${t[1]}</div>`:''}</div><div class="tr"><button class="ib" data-a="nav" data-v="alerts" aria-label="Notifications${alertN()?', '+alertN()+' new':''}"><span aria-hidden="true">🔔</span>${alertN()?`<span class="bdg">${alertN()}</span>`:''}</button><button class="av" data-a="nav" data-v="${mode=='cus'?'profile':mode=='biz'?'bset':'aset'}" aria-label="Account">${ini()}</button></div></header>${mode!='cus'?`<nav class="mnav" aria-label="Menu">${nav.map(n=>it(n,'chip')).join('')}${sw.map(s=>`<button class="chip" data-a="swmode" data-v="${s[0]}">${s[2]} ${s[1]}</button>`).join('')}</nav>`:''}${mode=='cus'&&sw.length?`<div class="box ok"><div class="row"><div class="s">Viewing as a customer</div><button class="btn" data-a="swmode" data-v="${sw[0][0]}">Back to ${sw[0][1]}</button></div></div>`:''}<div class="page">${page}</div></main>${mode=='cus'?`<nav class="bnav" aria-label="Main">${bn.map(n=>it(n,'bi')).join('')}</nav>`:''}</div>`}
+<main class="main${mode=='cus'?' hasb':''}"><header class="top"><div><h1>${t[0]}</h1>${t[1]?`<div class="s">${t[1]}</div>`:''}</div><div class="tr"><button class="ib" data-a="nav" data-v="alerts" aria-label="Notifications${alertN()?', '+alertN()+' new':''}"><span aria-hidden="true">🔔</span>${alertN()?`<span class="bdg">${alertN()}</span>`:''}</button><button class="av" data-a="nav" data-v="${mode=='cus'?'profile':mode=='biz'?'bset':'aset'}" aria-label="Account">${ini()}</button></div></header>${mode!='cus'?`<nav class="mnav" aria-label="Menu">${nav.map(n=>it(n,'chip')).join('')}${sw.map(s=>`<button class="chip" data-a="swmode" data-v="${s[0]}">${s[2]} ${s[1]}</button>`).join('')}</nav>`:''}<div class="page">${page}</div></main>${mode=='cus'?`<nav class="bnav" aria-label="Main">${bn.map(n=>it(n,'bi')).join('')}</nav>`:''}</div>`}
 const PAGES={};
 function render(){let h;
 if(!hdone&&P&&D.products.length){hdone=1;const m=location.hash.match(/^#p-(.+)$/),p=m&&D.products.find(x=>x.id==m[1]);if(p){ord=p.id;view='home'}}
-if(!U||!P){h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="theme">${dark()?'Light mode':'Dark mode'}</button></div>`+(U?'<div class="s">Loading...</div>':authV());$('#app').className=''}
+if(!U||!P){h=`<div class="row"><h1>Campus Market</h1><button class="link" data-a="theme">${dark()?'Light mode':'Dark mode'}</button></div>`+(U?(U.emailVerified?'<div class="s">Loading...</div>':verV()):authV());$('#app').className=''}
 else{const mode=curMode();if(view=='discover')view='home';
 const okv=[...NAV[mode].map(x=>x[0]),'shop','alerts'];if(mode!='adm')okv.push('msgs');
 if(!okv.includes(view))view=mode=='adm'?'adash':mode=='biz'?'bdash':'home';
@@ -447,6 +450,8 @@ async function act(a,v,el){err='';const D_=(k,i)=>D[k].find(x=>x.id==i);
 try{
 if(a=='mode'){mode=v;err=''}
 else if(a=='auth'){const e=$('#ae').value.trim(),p=$('#ap').value;if(mode=='up'){pend=($('#an').value||'').trim();await createUserWithEmailAndPassword(auth,e,p)}else await signInWithEmailAndPassword(auth,e,p)}
+else if(a=='verresend'){if(Date.now()-sentAt<30000)msg='Please wait 30 seconds before asking again.';else{msg='';await sendVer();msg=err?'':'Email sent again. Check your inbox and spam folder.'}}
+else if(a=='verdone'){msg='';await reload(U);if(U.emailVerified){await U.getIdToken(true);location.reload();return}else msg='Not verified yet. Tap the link in the email first.'}
 else if(a=='out')await signOut(auth);
 else if(a=='view'){view=v;msg=''}
 else if(a=='wel'){try{localStorage.setItem(wk(),'1')}catch(e){}view='bprod'}
